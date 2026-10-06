@@ -7,7 +7,7 @@ from flask import Flask, jsonify
 app = Flask(__name__)
 
 # Environment variables (with sensible fall-backs)
-PORT   = int(os.getenv("PORT", 5000))      # e.g. "5000"
+PORT   = int(os.getenv("PORT", 5500))      # e.g. "5500"
 NUMBER = os.getenv("NUMBER", "0")          # e.g. "1" (useful to tell backends apart)
 
 FACTS = [

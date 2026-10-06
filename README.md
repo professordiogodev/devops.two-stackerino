@@ -5,7 +5,7 @@ Two tiny apps that **talk to each other**:
 | Folder      | What it is   | Language        | Default port | Speaks…                    |
 | ----------- | ------------ | --------------- | ------------ | -------------------------- |
 | `frontend/` | **Frontend** | Node.js/Express | `3000`       | HTML (pages for humans) 👀 |
-| `backend/`  | **Backend**  | Python/Flask    | `5000`       | JSON (data for programs) 🤖 |
+| `backend/`  | **Backend**  | Python/Flask    | `5500`       | JSON (data for programs) 🤖 |
 
 You already know how to run **one** app (noderino / flaskerino). Now you'll make **two** apps work together. This is what people mean by **microservices**.
 
@@ -32,7 +32,7 @@ In this project:
 ```
   ┌──────────┐   1. GET /          ┌────────────┐  2. GET /api/fact   ┌───────────┐
   │ Browser  │ ──────────────────► │  FRONTEND  │ ──────────────────► │  BACKEND  │
-  │  (you)   │ ◄────────────────── │  :3000     │ ◄────────────────── │  :5000    │
+  │  (you)   │ ◄────────────────── │  :3000     │ ◄────────────────── │  :5500    │
   └──────────┘   4. HTML page      └────────────┘  3. JSON data       └───────────┘
 ```
 
@@ -43,10 +43,10 @@ In this project:
 
 | App      | Variable      | Purpose                                             | Default                 |
 | -------- | ------------- | --------------------------------------------------- | ----------------------- |
-| backend  | `PORT`        | Port the backend listens on                         | `5000`                  |
+| backend  | `PORT`        | Port the backend listens on                         | `5500`                  |
 | backend  | `NUMBER`      | A number shown on the page (to tell backends apart) | `0`                     |
 | frontend | `PORT`        | Port the frontend listens on                        | `3000`                  |
-| frontend | `BACKEND_URL` | **Where the frontend finds the backend**            | `http://localhost:5000` |
+| frontend | `BACKEND_URL` | **Where the frontend finds the backend**            | `http://localhost:5500` |
 
 Both apps also have `/healthcheck`.
 
@@ -76,7 +76,7 @@ python3 app.py
 ```
 
 > [!TIP]
-> ✅ Test it — open http://localhost:5000/api/fact in your browser. You should see **JSON** (ugly, raw data). That's normal: a backend makes data, not pages.
+> ✅ Test it — open http://localhost:5500/api/fact in your browser. You should see **JSON** (ugly, raw data). That's normal: a backend makes data, not pages.
 
 > [!WARNING]
 > Leave this terminal **running**! If you close it or press `Ctrl + C`, the backend stops.
@@ -91,7 +91,7 @@ cd devops.two-stackerino/frontend
 # (Ubuntu only, if you don't have it) sudo apt update && sudo apt install nodejs npm -y
 npm install
 
-export BACKEND_URL=http://localhost:5000
+export BACKEND_URL=http://localhost:5500
 node index.js
 ```
 
@@ -120,7 +120,7 @@ Stop both apps (`Ctrl + C` in each terminal) before Level 2.
 The real world: frontend on one machine, backend on another. You need **2 Linux VMs** (e.g. 2 EC2 instances, same VPC/network).
 
 ```
-Internet ──► [ VM-FRONTEND : 3000 ]  ──private IP──►  [ VM-BACKEND : 5000 ]
+Internet ──► [ VM-FRONTEND : 3000 ]  ──private IP──►  [ VM-BACKEND : 5500 ]
              (public, open to all)                    (only the frontend may enter)
 ```
 
@@ -147,7 +147,7 @@ cd devops.two-stackerino/frontend
 npm install
 
 # Use the BACKEND's PRIVATE IP here 👇
-export BACKEND_URL=http://172.31.10.20:5000
+export BACKEND_URL=http://172.31.10.20:5500
 node index.js
 ```
 
@@ -159,22 +159,22 @@ node index.js
 | VM           | Allow inbound port | From                                                        |
 | ------------ | ------------------ | ----------------------------------------------------------- |
 | VM-FRONTEND  | `3000`             | Anywhere (`0.0.0.0/0`)                                      |
-| VM-BACKEND   | `5000`             | **Only** VM-FRONTEND (its private IP or its security group) |
+| VM-BACKEND   | `5500`             | **Only** VM-FRONTEND (its private IP or its security group) |
 
 > [!CAUTION]
-> Do **not** open the backend's port `5000` to `0.0.0.0/0`. The backend should never be reachable from the internet — only from the frontend.
+> Do **not** open the backend's port `5500` to `0.0.0.0/0`. The backend should never be reachable from the internet — only from the frontend.
 
 Open `http://<FRONTEND-PUBLIC-IP>:3000` ✅ — "backend number **2**".
 
-Now try `http://<BACKEND-PUBLIC-IP>:5000/api/fact` from your browser → it does **not** work. That's a **feature**: only the frontend is open to the world. Users talk to the waiter, never the kitchen. 🍝
+Now try `http://<BACKEND-PUBLIC-IP>:5500/api/fact` from your browser → it does **not** work. That's a **feature**: only the frontend is open to the world. Users talk to the waiter, never the kitchen. 🍝
 
 > [!NOTE]
-> In Level 1, `BACKEND_URL` was `http://localhost:5000` because both apps were on the **same** machine. Now they're on **different** machines, so `localhost` would be wrong — the frontend VM would look for the backend *on itself*. Same code, different `BACKEND_URL`. That's why it's an environment variable!
+> In Level 1, `BACKEND_URL` was `http://localhost:5500` because both apps were on the **same** machine. Now they're on **different** machines, so `localhost` would be wrong — the frontend VM would look for the backend *on itself*. Same code, different `BACKEND_URL`. That's why it's an environment variable!
 
 ### 🩺 Debug checklist (if you see "backend unreachable")
 
-1. Is the backend running? On VM-BACKEND: `curl localhost:5000/healthcheck`
-2. Can the frontend VM reach it? On VM-FRONTEND: `curl http://<BACKEND-PRIVATE-IP>:5000/healthcheck`
+1. Is the backend running? On VM-BACKEND: `curl localhost:5500/healthcheck`
+2. Can the frontend VM reach it? On VM-FRONTEND: `curl http://<BACKEND-PRIVATE-IP>:5500/healthcheck`
    - Hangs/times out → firewall / security group 🔐
    - "Connection refused" → backend not running, or wrong port
 3. Is `BACKEND_URL` correct? The frontend prints it when it starts.
