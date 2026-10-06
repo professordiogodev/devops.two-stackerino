@@ -9,6 +9,9 @@ Two tiny apps that **talk to each other**:
 
 You already know how to run **one** app (noderino / flaskerino). Now you'll make **two** apps work together. This is what people mean by **microservices**.
 
+> [!NOTE]
+> 🇵🇹 Versão em português: https://github.com/professordiogodev/devops.two-stackerino-pt
+
 ---
 
 ## 0. Frontend vs Backend — what's the difference?
@@ -33,16 +36,17 @@ In this project:
   └──────────┘   4. HTML page      └────────────┘  3. JSON data       └───────────┘
 ```
 
+> [!IMPORTANT]
 > 💡 **Key idea:** the backend is the frontend's **upstream** (the service it depends on). The frontend finds it using **one environment variable: `BACKEND_URL`**. Getting that URL right in every situation is the whole exercise!
 
 ### Environment variables
 
-| App      | Variable      | Purpose                                   | Default                 |
-| -------- | ------------- | ----------------------------------------- | ----------------------- |
-| backend  | `PORT`        | Port the backend listens on               | `5000`                  |
-| backend  | `NUMBER`      | A number shown on the page (to tell backends apart) | `0`           |
-| frontend | `PORT`        | Port the frontend listens on              | `3000`                  |
-| frontend | `BACKEND_URL` | **Where the frontend finds the backend**  | `http://localhost:5000` |
+| App      | Variable      | Purpose                                             | Default                 |
+| -------- | ------------- | --------------------------------------------------- | ----------------------- |
+| backend  | `PORT`        | Port the backend listens on                         | `5000`                  |
+| backend  | `NUMBER`      | A number shown on the page (to tell backends apart) | `0`                     |
+| frontend | `PORT`        | Port the frontend listens on                        | `3000`                  |
+| frontend | `BACKEND_URL` | **Where the frontend finds the backend**            | `http://localhost:5000` |
 
 Both apps also have `/healthcheck`.
 
@@ -71,9 +75,11 @@ export NUMBER=1
 python3 app.py
 ```
 
-✅ Test it — open http://localhost:5000/api/fact in your browser. You should see **JSON** (ugly, raw data). That's normal: a backend makes data, not pages.
+> [!TIP]
+> ✅ Test it — open http://localhost:5000/api/fact in your browser. You should see **JSON** (ugly, raw data). That's normal: a backend makes data, not pages.
 
-Leave this terminal running!
+> [!WARNING]
+> Leave this terminal **running**! If you close it or press `Ctrl + C`, the backend stops.
 
 ### 1.3 Terminal 2: start the FRONTEND 🖥️
 
@@ -89,7 +95,8 @@ export BACKEND_URL=http://localhost:5000
 node index.js
 ```
 
-✅ Test it — open http://localhost:3000. You should see a **nice page** with a fact inside, and "Answered by backend number **1**". Refresh: the fact changes, because every refresh = frontend calls backend again.
+> [!TIP]
+> ✅ Test it — open http://localhost:3000. You should see a **nice page** with a fact inside, and "Answered by backend number **1**". Refresh: the fact changes, because every refresh = frontend calls backend again.
 
 🎉 **Two services are talking!**
 
@@ -101,6 +108,7 @@ node index.js
 
 The frontend is still alive — only its **upstream** is gone. Look at Terminal 2: it logs the error. Start the backend again (`python3 app.py`), refresh, and it's fixed.
 
+> [!IMPORTANT]
 > This is the #1 thing you'll debug in real life: *"Is it my app, or the thing my app depends on?"*
 
 Stop both apps (`Ctrl + C` in each terminal) before Level 2.
@@ -143,22 +151,28 @@ export BACKEND_URL=http://172.31.10.20:5000
 node index.js
 ```
 
-> ⚠️ `nodejs` from `apt` must be version **18 or newer** (`node -v`), because we use the built-in `fetch`. If it's older, install a newer Node (e.g. via [nvm](https://github.com/nvm-sh/nvm)).
+> [!WARNING]
+> `nodejs` from `apt` must be version **18 or newer** (check with `node -v`), because we use the built-in `fetch`. If it's older, install a newer Node (e.g. via [nvm](https://github.com/nvm-sh/nvm)).
 
 ### 2.3 Firewall / Security Groups 🔐
 
-| VM           | Allow inbound port | From                              |
-| ------------ | ------------------ | --------------------------------- |
-| VM-FRONTEND  | `3000`             | Anywhere (`0.0.0.0/0`)            |
+| VM           | Allow inbound port | From                                                        |
+| ------------ | ------------------ | ----------------------------------------------------------- |
+| VM-FRONTEND  | `3000`             | Anywhere (`0.0.0.0/0`)                                      |
 | VM-BACKEND   | `5000`             | **Only** VM-FRONTEND (its private IP or its security group) |
+
+> [!CAUTION]
+> Do **not** open the backend's port `5000` to `0.0.0.0/0`. The backend should never be reachable from the internet — only from the frontend.
 
 Open `http://<FRONTEND-PUBLIC-IP>:3000` ✅ — "backend number **2**".
 
 Now try `http://<BACKEND-PUBLIC-IP>:5000/api/fact` from your browser → it does **not** work. That's a **feature**: only the frontend is open to the world. Users talk to the waiter, never the kitchen. 🍝
 
-> 💡 Notice: in Level 1, `BACKEND_URL` was `http://localhost:5000` because both apps were on the **same** machine. Now they're on **different** machines, so `localhost` would be wrong — the frontend VM would look for the backend *on itself*. Same code, different `BACKEND_URL`. That's why it's an environment variable!
+> [!NOTE]
+> In Level 1, `BACKEND_URL` was `http://localhost:5000` because both apps were on the **same** machine. Now they're on **different** machines, so `localhost` would be wrong — the frontend VM would look for the backend *on itself*. Same code, different `BACKEND_URL`. That's why it's an environment variable!
 
-**Debug checklist** if you see "backend unreachable":
+### 🩺 Debug checklist (if you see "backend unreachable")
+
 1. Is the backend running? On VM-BACKEND: `curl localhost:5000/healthcheck`
 2. Can the frontend VM reach it? On VM-FRONTEND: `curl http://<BACKEND-PRIVATE-IP>:5000/healthcheck`
    - Hangs/times out → firewall / security group 🔐
