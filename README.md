@@ -9,9 +9,6 @@ Two tiny apps that **talk to each other**:
 
 You already know how to run **one** app (noderino / flaskerino). Now you'll make **two** apps work together. This is what people mean by **microservices**.
 
-> [!NOTE]
-> 🇵🇹 Versão em português: https://github.com/professordiogodev/devops.two-stackerino-pt
-
 ---
 
 ## 0. Frontend vs Backend — what's the difference?
